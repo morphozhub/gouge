@@ -244,7 +244,7 @@ class TestRetryBudget(unittest.TestCase):
         self.assertEqual(p.ledger.spent, call_credits("gpt-6-astra", 3_800, 5_000) + worst_credits(w.params[1])
                          + call_credits("gpt-6-astra", 9_000, 6_000))
         self.assertEqual(p.ledger.unknown_usage_calls, 1)
-        # a 5xx (no response, no billed tokens: sn17miner F2 rule) is charged 0, as in 0.2.1
+        # a 5xx (no response, no billed tokens: the base pipeline F2 rule) is charged 0, as in 0.2.1
         _, w, _, p = go(V2R, {("gen", 0): ok(GEN, 3_800, 5_000), ("refine", 0): err_http(503, "server_error"), ("refine", 1): ok(REF, 9_000, 6_000)})
         self.assertEqual(p.ledger.spent, call_credits("gpt-6-astra", 3_800, 5_000) + call_credits("gpt-6-astra", 9_000, 6_000))
 

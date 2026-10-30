@@ -33,7 +33,7 @@ URL = data_url(IMAGE)
 CODE = "export default function generate(THREE) {\n  return new THREE.Group();\n}\n"
 FIXED_PNGS = [PNG + bytes([i]) * 100 for i in range(4)]
 
-# sha256 prefixes of frozen texts: sn17miner values (p1-p4, rp1, f1, f2, f1 labels) and the port's grid variant
+# sha256 prefixes of frozen texts: the base pipeline values (p1-p4, rp1, f1, f2, f1 labels) and the port's grid variant
 FROZEN_TEXT = {"p1": "3305027034205500", "p2": "51eafa47f3aac0e4", "p3": "8a33c27ea95c48e5", "p4": "2b2b215d5e905b45",
                "rp1": "6347644ac3c802c6", "f1": "3f8108fad6e541caad7dfddbe06c9a5a2f13bed7997d4d669646d4434ce13edc",
                "f2": "daa6cb53f286e984f4d6cccde7e47b6d7d8026664155bb861d26b07724f6e7f1",
@@ -56,7 +56,7 @@ FROZEN_POD_BODY = {
     "refine_f2_front4_a1": "53423dfb02779e1a706bf24756510df2f8e59fb47a8b19458d6bc9f30c77c3de",
     "refine_f1_grid": "c7ba2f443e9cb6c29dadc9fe754afd31ca70f01f4d92c9d2400364e29aeee6b9",
 }
-# byte copies of sn17miner 0.4.0 (src 0ecfc85c) modules
+# byte copies of the base pipeline 0.4.0 (src 0ecfc85c) modules
 COPIED = {"repair.py": "258e65b26066b95695c5ec4b70f2170686179d9e83c093dad5d446e201ac5109",
           "jsscan.py": "1644f45441a7da1c0db944a65cdd082965670d983f4d6d6981d4921f52e51b83"}
 
@@ -99,7 +99,7 @@ class TestTexts(unittest.TestCase):
         labels = REFINE_LABELS_BY_VIEWS[("f1", "grid")]
         self.assertEqual((labels["reference"], labels["code"]), (REFINE_LABELS["f1"]["reference"], REFINE_LABELS["f1"]["code"]))
 
-    def test_copied_modules_are_byte_identical_to_sn17miner(self):
+    def test_copied_modules_are_byte_identical_to_base_pipeline(self):
         for name, want in COPIED.items():
             self.assertEqual(sha((ROOT / "sn17gen" / name).read_bytes()), want, name)
 

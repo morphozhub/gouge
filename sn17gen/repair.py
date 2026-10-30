@@ -626,7 +626,7 @@ def restructure(src: str, *, fit_wrapper: bool, fit_target_milli: int, need_rand
     helpers.append(FIT_HELPER.replace("__FIT__", target))
     out = (
         new_src.rstrip("\n")
-        + "\n\n// --- sn17miner " + version + ": fit the returned object to the unit cube (deterministic) ---\n"
+        + "\n\n// --- the base pipeline " + version + ": fit the returned object to the unit cube (deterministic) ---\n"
         + "\n".join(helpers)
         + "\n"
         + WRAPPER
@@ -720,7 +720,7 @@ def fallback_module(stem: str, version: str = REPAIR_VERSION) -> str:
     no colour can be derived; the stem appears only in a comment, so bytes differ per prompt."""
     safe = re.sub(r"[^A-Za-z0-9_.-]", "_", stem)[:80]
     return (
-        f"// sn17miner fallback ({version}) stem={safe}: neutral placeholder, emitted only when no\n"
+        f"// the base pipeline fallback ({version}) stem={safe}: neutral placeholder, emitted only when no\n"
         "// candidate passed the production validator.\n"
         "export default function generate(THREE) {\n"
         "  const group = new THREE.Group();\n"

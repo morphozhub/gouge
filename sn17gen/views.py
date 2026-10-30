@@ -5,7 +5,7 @@ Calls made (each one recorded by the runtime and reproduced + verified in replay
                        check of a candidate in mode v1, of every module in grid mode, and of the fallback.
   front4(js)           four ``renderer.render(js, RenderOptions(thetas=(t,), phis=(p,), ...))`` calls: one angle pair
                        = a single-view PNG. The judge's Stage-1 front views in this fixed order, 512 px, neutral light,
-                       white background (sn17miner rv1). Byte-identical to 0.2.2's emulator "view" renders for an
+                       white background (the base pipeline rv1). Byte-identical to 0.2.2's emulator "view" renders for an
                        opaque framebuffer (10-25: 12/12 PNGs, render-service-js 0.4.10; alpha < 1 can differ).
   check_front(js)      the first front4 view only: validity check of a refined module in front4 mode.
 A structured ``RenderRejected`` (the service's HTTP 422: production validation failure) propagates to the caller,

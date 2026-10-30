@@ -1,5 +1,5 @@
-"""Repair rules r1-r3 (ported from sn17miner tests/test_repair.py + the r3 cases of test_v2.py, pytest -> unittest).
-repair.py and jsscan.py are byte copies of sn17miner 0.4.0, so the frozen v0 bytes still hold."""
+"""Repair rules r1-r3 (ported from the base pipeline tests/test_repair.py + the r3 cases of test_v2.py, pytest -> unittest).
+repair.py and jsscan.py are byte copies of the base pipeline 0.4.0, so the frozen v0 bytes still hold."""
 
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ TDZ = """export default function generate(THREE) {
 const SIZE = 0.5;
 class Helper {}
 """
-# computed with the v0 build (sn17miner 0.1.0 sources, 2026-10-20) — r1 must keep producing these bytes
+# computed with the v0 build (the base pipeline 0.1.0 sources, 2026-10-20) — r1 must keep producing these bytes
 V0_TDZ_RAND_SHA256 = "750d5dfccdfa3c7baa3e14749f06272dd1f5407054d85563fc8aba0307dad965"
 V0_FALLBACK_ABC_SHA256 = "447cf8d57e025fe5b33558f2e99ceb4e53b4867d235a8a1a77cbd66ff54f64aa"
 
@@ -213,7 +213,7 @@ export { helper as h };
         txt = "```js\n" + (w % "const x = 0.5; const k = Math.exp(-(x / 0.4) ** 2);") + "```"
         r2, r3 = repair(txt, version="r2"), repair(txt, version="r3")
         self.assertTrue(r3.ok)
-        self.assertEqual(r3.js, r2.js.replace("sn17miner r2: fit", "sn17miner r3: fit"))
+        self.assertEqual(r3.js, r2.js.replace("the base pipeline r2: fit", "the base pipeline r3: fit"))
         self.assertFalse(repair("```js\n" + (w % bad[0]) + "```", version="r3").ok)
 
 

@@ -175,7 +175,7 @@ def _invalid(raw: bytes) -> BaseException:
 
 
 def f3_stream() -> bytes:
-    """VPS_HOST.md F3's shape (sven_252 fe7fb23acf, exchange 94a33dc2, 10-23): created, in_progress, reasoning items,
+    """Stream-cut shape (10-23): created, in_progress, reasoning items,
     then the stream ends (no response.completed / .failed / .incomplete)."""
     resp = _response("in_progress", 0, 0)
     resp["usage"] = None

@@ -1,4 +1,4 @@
-"""Deterministic request builder (sn17miner reqbuild t1/rp1/f1/f2, ported to bytes-in prompts).
+"""Deterministic request builder (the base pipeline reqbuild t1/rp1/f1/f2, ported to bytes-in prompts).
 
 Every request is a dict built in ONE fixed key order
     stream, model, instructions, input, reasoning, max_output_tokens, store [, service_tier]
@@ -17,7 +17,7 @@ import base64
 import hashlib
 from typing import Any
 
-from .contract import INSTRUCTIONS, REFINE_IMAGE_DETAIL, REFINE_LABELS_BY_VIEWS, REFINE_TEXT_BY_VIEWS, RETRY_COMPACT_TEXT, USER_TEXT_GEN
+from .contract import INSTRUCTIONS, REFINE2_TEXT, REFINE_IMAGE_DETAIL, REFINE_LABELS_BY_VIEWS, REFINE_TEXT_BY_VIEWS, RETRY_COMPACT_TEXT, USER_TEXT_GEN
 from .settings import Settings
 
 PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
@@ -100,7 +100,7 @@ def build_gen_params(s: Settings, pid: str, seed: int, image_url: str, attempt: 
 
 
 def build_refine_params(s: Settings, pid: str, seed: int, image_url: str, code: str, pngs: list[bytes],
-                        attempt: int = 0) -> dict[str, Any]:
+                        attempt: int = 0, note: str | None = None, stage: str = "refine") -> dict[str, Any]:
     """The refine request: same instructions as gen; one user turn with
     [tag + frozen refine text] [label] [prompt image] [label] [preview PNG data URLs] [label + the model's own
     step-1 module in a javascript fence]. ``attempt`` 1 only for refine f2's one retry (same request, new tag)."""
@@ -116,14 +116,17 @@ def build_refine_params(s: Settings, pid: str, seed: int, image_url: str, code: 
     key = (s.refine_version, s.refine_views)
     labels = REFINE_LABELS_BY_VIEWS[key]
     detail = REFINE_IMAGE_DETAIL[s.refine_version]
+    text = REFINE2_TEXT if stage == "refine2" else REFINE_TEXT_BY_VIEWS[key]   # Gouge: second (detail) pass
     content: list[dict[str, Any]] = [
-        {"type": "input_text", "text": f"{call_tag(s, pid, seed, 'refine', attempt)} {REFINE_TEXT_BY_VIEWS[key]}"},
+        {"type": "input_text", "text": f"{call_tag(s, pid, seed, stage, attempt)} {text}"},
         {"type": "input_text", "text": labels["reference"]},
         {"type": "input_image", "image_url": image_url, "detail": s.detail},
         {"type": "input_text", "text": labels["renders"]},
     ]
     for png in pngs:
         content.append({"type": "input_image", "image_url": data_url(bytes(png)), "detail": detail})
+    if note:
+        content.append({"type": "input_text", "text": note})   # Gouge: measured colour note (calib.colour_check)
     fence = "```"
     content.append({"type": "input_text", "text": f"{labels['code']}\n{fence}javascript\n{code}{fence}"})
     params: dict[str, Any] = {}

@@ -1,5 +1,5 @@
 """The fixed instruction texts (prompt versions p1-p4, refine f1/f2 and their view-mode variants) and the output-contract
-constants. Copied from sn17miner 0.4.0 (src 0ecfc85c) unchanged; the submission-port additions are at the end.
+constants. Copied from the base pipeline 0.4.0 (src 0ecfc85c) unchanged; the submission-port additions are at the end.
 
 The text is a literal: it never depends on data, the environment or iteration order (R5-R7).
 Facts encoded here: render contract F1-F7 (01_RECONCILED_FACTS.md), production traps F5, judge B11/F3,
@@ -146,11 +146,67 @@ for _old, _new in ((_P3_POSE, _P4_POSE), (_P3_WHEELS, _P4_WHEELS), (_P3_COLOURS,
 del _old, _new
 assert INSTRUCTIONS_P4 != INSTRUCTIONS_P3
 
+# p5 (Gouge, 2026-10-29, round-0 judge lesson): p4 with the REAL limits instead of the p3 economy budget, the
+# "15 to 120 meshes" line replaced by a detail demand (the judge's top complaint about this pipeline was "less
+# detailed"), and rule 7 encouraging DataTextures wherever the photo shows a pattern.
+_P3_BUDGET = '6. Budgets: keep the file under 200 KB; numeric and string literals under 50 KB in total (build repeated geometry with loops, never embed big arrays); at most 60,000 vertices in total (the hard limit is 250,000, but heavy scenes time out in the software renderer); at most 120 Mesh/Line/Points objects (an InstancedMesh counts once; at most 5,000 instances in total); DataTexture data at most 4 MB; scene depth under 32; generate() must finish in well under one second. Spend detail where the judge sees it (silhouette, colour regions, distinctive parts), not on hidden or tiny geometry.'
+_P5_BUDGET = '6. Budgets: keep the file under 200 KB; numeric and string literals under 50 KB in total (build repeated geometry with loops, never embed big arrays); at most 250,000 vertices in total; at most 200 Mesh/Line/Points objects (an InstancedMesh counts once; at most 50,000 instances in total); DataTexture data at most 4 MB; scene depth under 32; generate() must finish in well under one second (no huge nested loops, no per-vertex JavaScript work on large geometries). Use these budgets for visible detail: the judge rewards complete, textured, detailed objects and penalises simplified ones.'
+_P3_SEGMENTS = "- Use enough segments for smooth curves (24 to 64 radial segments) and enough parts for recognisable detail (typically 15 to 120 meshes) while staying within the budgets."
+_P5_SEGMENTS = (
+    "- Use enough segments for smooth curves (24 to 64 radial segments) and as many parts as the object really has (typically 40 to 180 meshes).\n"
+    "- Write a thorough module, about 6,000-8,000 tokens of code, and spend the length on what the photo shows: every distinct part, accurate profiles and proportions, bevels, rims, seams and panel lines, buttons, keys, screws, holes, feet and hinges, surface texture (wood grain, fabric weave, leather, brushed metal, speckles, cracks) and painted or printed patterns and lettering through procedural DataTextures. Use helper functions and loops so the length goes into detail, not repetition. Never simplify a visible feature away: the judge compares every render with the photo and penalises each missing part, each smooth surface where the photo shows texture and each flat colour where the photo shows variation."
+)
+_P2_RULE7_TAIL = "Use one only when a pattern clearly matters (stripes, a label, a screen, wood grain); plain colours are usually better."
+_P5_RULE7_TAIL = "Use them wherever the photo shows a pattern, print, grain, weave, label or lettering; a plain colour is right only for a plainly coloured surface."
+INSTRUCTIONS_P5 = INSTRUCTIONS_P4
+for _old, _new in ((_P3_BUDGET, _P5_BUDGET), (_P3_SEGMENTS, _P5_SEGMENTS), (_P2_RULE7_TAIL, _P5_RULE7_TAIL)):
+    INSTRUCTIONS_P5 = _replace_once(INSTRUCTIONS_P5, _old, _new)
+del _old, _new
+assert INSTRUCTIONS_P5 != INSTRUCTIONS_P4
+
 USER_TEXT_GEN_P1 = "The reference image of the object to recreate is attached. Write the complete module now."
 
-INSTRUCTIONS = {"p1": INSTRUCTIONS_P1, "p2": INSTRUCTIONS_P2, "p3": INSTRUCTIONS_P3, "p4": INSTRUCTIONS_P4}
+# p6: p5 with the metal/dark-material line rewritten as a numeric table (round-0 duels: "black instead of silver",
+# "solid black instead of dark grey with texture" were the most repeated complaints about single-draft modules).
+_P4_METAL = "- metalness at most 0.6 (more renders black under the studio light); carry metal shades in the colour, for example silver #b8b8b8 with metalness 0.5 and roughness 0.3. roughness between 0.25 and 0.9."
+_P6_METAL = ("- Brightness comes from the colour, never from metalness: under the judge's neutral light metalness darkens a surface, so metalness stays at most 0.6 and every metal gets a light base colour. "
+             "Polished steel, chrome, silver, aluminium: color #c8c8c8 to #dcdcdc, metalness 0.35-0.5, roughness 0.2-0.35. Brushed or dull metal: #a8a8a8 to #b8b8b8, metalness 0.4, roughness 0.5. Brass or gold: #c9a24a to #d9b45c, metalness 0.5, roughness 0.35. "
+             "Dark fabric, felt, rubber, dark plastic: #2a2a2a to #4a4a4a, roughness 0.8-0.95, with a subtle DataTexture (weave, grain or noise) so the surface reads as material and not as a black hole; use #000000 to #141414 only where the photo is truly black. "
+             "Other surfaces: roughness between 0.25 and 0.9. Sample each hex from the photo's lit side of that part.")
+INSTRUCTIONS_P6 = _replace_once(INSTRUCTIONS_P5, _P4_METAL, _P6_METAL)
+# p6 also sets a working vertex target below the hard limit: round-0 style modules that aim at 250,000 get rejected
+# (VERTEX_LIMIT_EXCEEDED on graters/perforated objects) or time out in the Pod's software renderer.
+INSTRUCTIONS_P6 = _replace_once(
+    INSTRUCTIONS_P6, "at most 250,000 vertices in total;",
+    "keep the total under 150,000 vertices (the hard limit is 250,000 and a module over it is rejected outright; use "
+    "modest segment counts on repeated small parts such as holes, studs and beads);")
+# Second refine pass (Gouge SECOND_REFINE): a detail inventory against the photo, then the complete module with the
+# missing small parts and surface detail added. Same request layout as refine f1 (photo, four judge views, code).
+REFINE2_TEXT = (
+    "DETAIL PASS: a second and last chance to improve your module before it is judged. Below are the reference photo, "
+    "renders of your current module made by the judge's own renderer from the four front angles it compares with the "
+    "photo first, and the module's code. The judge rewards completeness of small features and surface texture and "
+    "penalises simplified, smooth or plain surfaces; the overall shape, pose and colours of the current module are "
+    "already judged acceptable, so keep them.\n"
+    "1. Inventory the photo: every visible part, every repeated element with its count (buttons, holes, slats, spokes, "
+    "stitches, studs), every surface pattern, print, grain, weave, speckle, seam, rim, ridge, strap, ring, buckle, "
+    "screw, lettering or logo area, and every colour variation (gradients, wear, highlights, darker trim). Mark which "
+    "of these the renders lack, show too simply or show at the wrong size.\n"
+    "2. Then write the COMPLETE corrected module that adds the missing items and the surface detail: procedural "
+    "DataTextures for patterns, lettering areas, grain, weave and speckle; real geometry for holes, ribs, fluting, "
+    "serrations, buckles, hinges, screws and rims. This is an EDIT of the current module, not a rewrite: copy every "
+    "function and every part that already matches the photo VERBATIM (same code, same numbers), and change or add "
+    "only what the inventory marked. Never re-author elements that already read correctly in the renders, in "
+    "particular screens, digits, lettering, dials, logos, buttons and repeated-part layouts: a redrawn digit or "
+    "letter that breaks apart costs more than it gains. Keep the same pose, proportions and base colours; do not "
+    "simplify or remove anything that matches; stay within the budgets of the module contract.\n"
+    "Reply format: first the inventory (plain text, at most 15 short bullets, no code), then exactly one ```javascript "
+    "fenced code block that contains the complete module."
+)
+assert INSTRUCTIONS_P6 != INSTRUCTIONS_P5
+INSTRUCTIONS = {"p1": INSTRUCTIONS_P1, "p2": INSTRUCTIONS_P2, "p3": INSTRUCTIONS_P3, "p4": INSTRUCTIONS_P4, "p5": INSTRUCTIONS_P5, "p6": INSTRUCTIONS_P6}
 USER_TEXT = {("p1", "gen"): USER_TEXT_GEN_P1, ("p2", "gen"): USER_TEXT_GEN_P1, ("p3", "gen"): USER_TEXT_GEN_P1,
-             ("p4", "gen"): USER_TEXT_GEN_P1}
+             ("p4", "gen"): USER_TEXT_GEN_P1, ("p5", "gen"): USER_TEXT_GEN_P1}
 
 # Retry policy rp1 (C1-P5): fixed line put after the tag of the attempt that follows a RECORDED
 # `provider_incomplete` whose reason is max_output_tokens. Frozen like the prompt versions (tests/test_contract.py).

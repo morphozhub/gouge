@@ -26,7 +26,7 @@ V1 = make_settings("v1", ticket=FIXTURE_TICKET, service_tier_fraction=FIXTURE_TI
 V2 = make_settings("v2", "f1", "front4", ticket=FIXTURE_TICKET, service_tier_fraction=FIXTURE_TIER_FRACTION, refine_retry=FIXTURE_REFINE_RETRY)
 V2G = make_settings("v2", "f1", "grid", ticket=FIXTURE_TICKET, service_tier_fraction=FIXTURE_TIER_FRACTION, refine_retry=FIXTURE_REFINE_RETRY)
 V21 = make_settings("v2", "f2", "front4", ticket=FIXTURE_TICKET, service_tier_fraction=FIXTURE_TIER_FRACTION, refine_retry=FIXTURE_REFINE_RETRY)
-# submission 0.1.0 / sn17miner v2 refine budget (3M) for comparisons with v2.2's 4M refine cap
+# submission 0.1.0 / the base pipeline v2 refine budget (3M) for comparisons with v2.2's 4M refine cap
 V2_3M = make_settings("v2", "f1", "front4", refine_credit_cap=3_000_000, ticket=FIXTURE_TICKET, service_tier_fraction=FIXTURE_TIER_FRACTION, refine_retry=FIXTURE_REFINE_RETRY)
 V2G_3M = make_settings("v2", "f1", "grid", refine_credit_cap=3_000_000, ticket=FIXTURE_TICKET, service_tier_fraction=FIXTURE_TIER_FRACTION, refine_retry=FIXTURE_REFINE_RETRY)
 V21_3M = make_settings("v2", "f2", "front4", refine_credit_cap=3_000_000, ticket=FIXTURE_TICKET, service_tier_fraction=FIXTURE_TIER_FRACTION, refine_retry=FIXTURE_REFINE_RETRY)
@@ -196,7 +196,7 @@ class TestV2Front4(unittest.TestCase):
 
 
 class TestV22RefineCap(unittest.TestCase):
-    """sn17miner v2.2 (R7): the refine call may run while recorded spend + its worst case <= 4,000,000 credits; every
+    """the base pipeline v2.2 (R7): the refine call may run while recorded spend + its worst case <= 4,000,000 credits; every
     gen call and the rp1 plan keep 3,000,000. 3M variants = submission 0.1.0."""
 
     # gen attempt 0 hits the output cap (1,238,000), the rp1 32k retry is accepted with 20k out (1,038,000)

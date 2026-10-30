@@ -4,24 +4,24 @@ Change a behaviour by editing the constants below and committing; nothing reads 
 host or the network (README "Reproducibility"). Generation and replay run the same committed source, so they always
 run the same settings. Tests build other variants with ``make_settings(...)`` without touching these constants.
 
-Modes (ported from sn17miner 0.4.0, measured in rounds 3-4):
+Modes (ported from the base pipeline 0.4.0, measured in rounds 3-4):
   v1  gen only: gpt-6-astra, effort high, prompt p4, repair r3, output-cap retry rp1; the module must pass the
       production validator (renderer.render raises RenderRejected otherwise) or the next attempt / the fallback is
-      used. sn17miner v1 = this with repair r2 (r3 only adds structural checks for JS syntax errors).
+      used. the base pipeline v1 = this with repair r2 (r3 only adds structural checks for JS syntax errors).
   v2  v1 + ONE render-and-refine call (refine f1; E4 EVAL-B held-out: v2 - v1 = +45.6 pts, v2 vs the threejs
       leader 112/125). ``REFINE_VIEWS`` picks the images the refine call sees:
         "front4": rv1 = the judge's four Stage-1 front views (front_left 30/0, front_right 330/0, front_below 0/15,
                   front_above 0/-30), 512 px, neutral light, white background, one render() call per view
-                  (byte-identical to sn17miner's one-call rv1 PNGs, runtime_emu measurement);
+                  (byte-identical to the base pipeline's one-call rv1 PNGs, runtime_emu measurement);
         "grid":   the runtime's default preview, ONE render() call with no options (2 x 2 grid, studio light, grey).
       ``REFINE_VERSION`` "f2" = keep-pose text + one refine retry after a recorded provider failure (E4: a tie with
       f1, -0.8 pts); f2 exists for front4 only.
-      Refine budget (sn17miner v2.2, R7): ``REFINE_CREDIT_CAP`` = 4,000,000 credits. Before each refine call, recorded
+      Refine budget (the base pipeline v2.2, R7): ``REFINE_CREDIT_CAP`` = 4,000,000 credits. Before each refine call, recorded
       spend + that call's worst case must stay within it; every gen call (and rp1's 32k-or-24k choice) keeps
       ``credit_cap`` = 3,000,000, so the gen requests, gen spend and every refine body are exactly v2's. v2.2 refines
       where v2 did, plus where gen spend + the refine worst case is in (3M, 4M] (R7: 8 of 381 prompt-draws, judged
       5 wins / 2 draws / 0 losses vs the unrefined module; ~$1.0 per rescued refine). Per-prompt worst case <= 4M
-      (README nominal 5M). 3,000,000 here = sn17miner v2 / submission 0.1.0 behaviour.
+      (README nominal 5M). 3,000,000 here = the base pipeline v2 / submission 0.1.0 behaviour.
   The refine text stays f1: R7's f3 (-2.7 pts pooled) and f4 (0.0) missed the pre-registered +7 bar for EVAL-B.
 
 Service tier (0.2.1, a window-fit contingency; U1 round 8): ``SERVICE_TIER_FRACTION`` = the share of prompts whose
@@ -63,16 +63,21 @@ MODE = "v2"              # "v1" (no refine) | "v2" (gen + one render-and-refine 
 REFINE_VERSION = "f1"    # v2 only: "f1" | "f2"
 REFINE_VIEWS = "front4"  # v2 only: "front4" | "grid"
 REFINE_CREDIT_CAP = 4_000_000  # v2 only: refine call(s) run while recorded spend + worst case <= this (v2.2); gen keeps 3M
-TICKET = "sven_000"            # label carried in every request tag; give each own hotkey's commit its own ticket
+TICKET = "gouge_r1"            # label carried in every request tag; give each own hotkey's commit its own ticket
 SERVICE_TIER_FRACTION = 0.0  # share of prompts on FAST_TIER, picked by sha256(image) (0.0 = no service_tier key = 0.2.0 bytes)
 FAST_TIER = "fast"       # service_tier of the selected prompts' gen + refine calls ("fast" = 2x cash, ~1.8x speed; U1)
+PROMPT_VERSION = "p6"    # Gouge: p5 = p4 + real limits + detail demand; p6 = p5 + numeric metal/dark-material table ("p4" = round-0 bytes)
+TWO_DRAFTS = False       # Gouge: second Astra draft (tag attempts 2/3) + a Sol judge on the front4 views picks the refine input (measured: no gain)
+COLOUR_CALIB = True      # Gouge: numeric colour check photo vs front4 renders -> measured note in the refine prompt when it fires (0 calls)
+SECOND_REFINE = True     # Gouge: after an accepted refine, one more Astra-high detail pass (REFINE2_TEXT) on fresh front4 renders
+REFINE2_GUARD = True     # Gouge: a Sol judge compares refine vs detail pass on the front4 views; the detail pass wins only when clearly better
 REFINE_RETRY = True      # v2 only: one refine retry (attempt 1) after a recorded retryable failure incl. a stream cut (0.2.2 v2r; False = 0.2.1)
 # ------------------------------------------------------------------------------------------------------------------
 
 MODES = ("v1", "v2")
 REFINE_VERSIONS = ("f1", "f2")
 FAST_TIERS = ("fast", "ultrafast")   # never "flex" (forbidden by 404) and never "default"/"auto" (= no key)
-GEN_CREDIT_CAP = 3_000_000      # per-prompt worst-case cap of every gen call (sn17miner's $3 per model)
+GEN_CREDIT_CAP = 3_000_000      # per-prompt worst-case cap of every gen call (the base pipeline's $3 per model)
 README_CREDITS_PER_PROMPT = 5_000_000
 _LABEL = re.compile(r"^[A-Za-z0-9_.-]{1,32}$")
 _PID = re.compile(r"^[0-9a-f]{16}$")
@@ -104,6 +109,10 @@ class Settings:
     service_tier_fraction: float = 0.0  # share of prompts (by sha256(image)) whose calls carry service_tier=fast_tier
     fast_tier: str = "fast"
     refine_retry: bool = False          # v2: one refine retry after a recorded retryable failure / stream cut (0.2.2)
+    two_drafts: bool = False            # Gouge: second draft + judge before the refine
+    colour_calib: bool = False          # Gouge: colour check note in the refine prompt (calib.colour_check)
+    second_refine: bool = False         # Gouge: detail pass after the accepted refine (one more call)
+    refine2_guard: bool = False         # Gouge: Sol regression guard between refine and detail pass (one cheap call)
 
     def __post_init__(self) -> None:
         if self.mode not in MODES:
@@ -132,6 +141,14 @@ class Settings:
             raise ValueError("caps must stay within the README's nominal per-prompt limits")
         if type(self.refine_retry) is not bool:
             raise ValueError(f"refine_retry must be a bool, got {self.refine_retry!r}")
+        if type(self.two_drafts) is not bool:
+            raise ValueError(f"two_drafts must be a bool, got {self.two_drafts!r}")
+        if type(self.colour_calib) is not bool:
+            raise ValueError(f"colour_calib must be a bool, got {self.colour_calib!r}")
+        if type(self.second_refine) is not bool:
+            raise ValueError(f"second_refine must be a bool, got {self.second_refine!r}")
+        if type(self.refine2_guard) is not bool:
+            raise ValueError(f"refine2_guard must be a bool, got {self.refine2_guard!r}")
         refine = (self.refine_version, self.refine_views, self.refine_effort, self.refine_max_output_tokens,
                   self.refine_credit_cap)
         if self.mode == "v1":
@@ -169,6 +186,14 @@ class Settings:
         base = f"{self.mode}-{self.refine_version}-{self.refine_views}" if self.refine else self.mode
         if self.refine_retry:
             base += "-rr"
+        if self.two_drafts:
+            base += "-2d"
+        if self.colour_calib:
+            base += "-cc"
+        if self.second_refine:
+            base += "-r2"
+        if self.refine2_guard:
+            base += "g"
         return base if self.service_tier_fraction == 0 else f"{base}-{self.fast_tier}{self.service_tier_fraction:g}"
 
     def service_tier(self, pid: str) -> str | None:
@@ -183,7 +208,9 @@ class Settings:
 def make_settings(mode: str = MODE, refine_version: str = REFINE_VERSION, refine_views: str = REFINE_VIEWS,
                   ticket: str = TICKET, refine_credit_cap: int = REFINE_CREDIT_CAP,
                   service_tier_fraction: float = SERVICE_TIER_FRACTION, fast_tier: str = FAST_TIER,
-                  refine_retry: bool = REFINE_RETRY) -> Settings:
+                  refine_retry: bool = REFINE_RETRY, prompt_version: str = PROMPT_VERSION,
+                  two_drafts: bool = TWO_DRAFTS, colour_calib: bool = COLOUR_CALIB,
+                  second_refine: bool = SECOND_REFINE, refine2_guard: bool = REFINE2_GUARD) -> Settings:
     """``refine_credit_cap`` 3,000,000 = the v2 / 0.1.0 refine budget (for comparisons); ignored in mode v1.
     ``service_tier_fraction`` 0.0 = no service_tier key in any request (0.2.0 bytes).
     ``refine_retry`` False = 0.2.1 behaviour; ignored in mode v1 (no refine step)."""
@@ -191,12 +218,14 @@ def make_settings(mode: str = MODE, refine_version: str = REFINE_VERSION, refine
     return Settings(
         mode=mode, model="gpt-6-astra", effort="high", detail="high", max_output_tokens=24_000, max_attempts=2,
         credit_cap=GEN_CREDIT_CAP, refine_credit_cap=refine_credit_cap if refine else None, call_cap=60,
-        prompt_version="p4", repair_version="r3", fit_target_milli=970,
+        prompt_version=prompt_version, repair_version="r3", fit_target_milli=970,
         retry_policy="rp1", retry_max_output_tokens=32_000,
         refine_version=refine_version if refine else None, refine_views=refine_views if refine else None,
         refine_effort="high" if refine else None, refine_max_output_tokens=24_000 if refine else None,
         ticket=ticket, service_tier_fraction=service_tier_fraction, fast_tier=fast_tier,
-        refine_retry=refine_retry if refine else False,
+        refine_retry=refine_retry if refine else False, two_drafts=two_drafts, colour_calib=colour_calib,
+        second_refine=second_refine if refine else False,
+        refine2_guard=refine2_guard if (refine and second_refine) else False,
     )
 
 

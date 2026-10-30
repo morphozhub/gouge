@@ -7,7 +7,7 @@ with more than 272,000 input tokens uses the long-context weights for the whole 
 copy of ``miner-reference/budgets/pricing.json`` @ 72324c6 (checked 2026-10-19), as decimal strings.
 
 The cap is a WORST-CASE cap: before every call, recorded spend + the call's worst case must stay within the step's
-cap: ``Settings.credit_cap`` for gen calls (3,000,000 = the $3 per model of sn17miner), ``Settings.refine_credit_cap``
+cap: ``Settings.credit_cap`` for gen calls (3,000,000 = the $3 per model of the base pipeline), ``Settings.refine_credit_cap``
 for refine calls (v2.2: 4,000,000); the README's nominal limit is 5,000,000.
 The worst case of a request = its text bytes (body bytes minus base64 image payloads; a token is at least one byte)
 + an image-token bound per image at its detail + its own ``max_output_tokens``. Recorded usage never comes from a
@@ -110,7 +110,7 @@ class CallUsage:
 def usage_from_error(err: BaseException) -> CallUsage:
     """Usage of a recorded provider failure. A failure that carries a response (response.failed / incomplete) is
     charged its usage, or its worst case when the usage is missing; one without a response (HTTP 4xx/5xx, stream
-    error event) has no billed tokens (sn17miner F2 rule)."""
+    error event) has no billed tokens (the base pipeline F2 rule)."""
     resp = getattr(err, "response", None)
     if resp is None:
         return CallUsage()
